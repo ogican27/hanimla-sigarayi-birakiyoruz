@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hanımla Sigarayı Bırakıyoruz</title>
+  <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/2598/2598612.png" type="image/png">
+  <style>
+    @keyframes flash {
+      0% { color: #ff6961; }
+      50% { color: white; }
+      100% { color: #ff6961; }
+    }
+
+    body {
+      font-family: sans-serif;
+      background: #2b2b2b;
+      margin: 0;
+      padding: 20px;
+      color: #f5f5f5;
+    }
+    .container {
+      background: #3b1f2b;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+      max-width: 400px;
+      margin: auto;
+    }
+    h1, h2 {
+      text-align: center;
+      color: #a9d6b9;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      background-color: #386641;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #2a4730;
+    }
+    input, select {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .stats {
+      margin-top: 20px;
+      text-align: center;
+    }
+    .tabs {
+      display: flex;
+      margin-bottom: 20px;
+    }
+    .tab {
+      flex: 1;
+      padding: 10px;
+      background: #386641;
+      text-align: center;
+      cursor: pointer;
+      border-radius: 4px;
+      margin: 0 5px;
+    }
+    .tab.active {
+      background: #2a4730;
+    }
+    #passwordOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      color: white;
+      z-index: 1000;
+    }
+    #passwordOverlay input {
+      padding: 10px;
+      border: none;
+      border-radius: 4px;
+      margin-top: 10px;
+    }
+    #passwordOverlay button {
+      margin-top: 10px;
+      padding: 8px 16px;
+      background-color: #386641;
+      border: none;
+      border-radius: 4px;
+      color: white;
+      cursor: pointer;
+    }
+    #dateDisplay {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <audio id="alarmSound">
+    <source src="https://www.soundjay.com/button/beep-07.mp3" type="audio/mpeg">
+  </audio>
+
+  <div id="passwordOverlay">
+    <h2>Şifreyi Girin</h2>
+    <input type="password" id="passwordInput" placeholder="Şifre" />
+    <label><input type="checkbox" id="rememberPassword"> Şifreyi hatırla</label>
+    <button onclick="checkPassword()">Giriş Yap</button>
+  </div>
+
+  <div class="container" style="display:none;">
+    <h1>Hanımla Sigarayı Bırakıyoruz</h1>
+    <div id="dateDisplay"></div>
+
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('ogulcan')">Oğulcan</div>
+      <div class="tab" onclick="switchTab('sude')">Sude</div>
+    </div>
+
+    <label for="count">Kaç tane içtin?</label>
+    <input type="number" id="count" min="1" placeholder="Bugünkü adeti girin" />
+
+    <button onclick="addCount()">Ekle</button>
+    <button onclick="resetCounts()">Günü Sıfırla</button>
+
+    <div class="stats">
+      <h2 id="currentUser">Oğulcan</h2>
+      <p><strong>Toplam İçilen:</strong> <span id="userCount">0</span></p>
+      <p id="limitMessage"></p>
+    </div>
+  </div>
+
+  <script>
+    const PASSWORD = 'hanimlabirakiyoruz0606';
+
+    if (localStorage.getItem('rememberPassword') === 'true') {
+      document.getElementById('passwordOverlay').style.display = 'none';
+      document.querySelector('.container').style.display = 'block';
+    }
+
+    function checkPassword() {
+      const input = document.getElementById('passwordInput').value;
+      if (input === PASSWORD) {
+        if (document.getElementById('rememberPassword').checked) {
+          localStorage.setItem('rememberPassword', 'true');
+        }
+        document.getElementById('passwordOverlay').style.display = 'none';
+        document.querySelector('.container').style.display = 'block';
+      } else {
+        alert('Yanlış şifre!');
+      }
+    }
+
+    let counts = JSON.parse(localStorage.getItem('counts')) || { ogulcan: 0, sude: 0 };
+    let currentUser = 'ogulcan';
+
+    function updateDate() {
+      const today = new Date();
+      const dateString = today.toLocaleDateString('tr-TR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      document.getElementById('dateDisplay').innerText = dateString;
+    }
+
+    function switchTab(user) {
+      currentUser = user;
+      document.getElementById('currentUser').innerText = user === 'ogulcan' ? 'Oğulcan' : 'Sude';
+      document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+      document.querySelector(`.tab:nth-child(${user === 'ogulcan' ? 1 : 2})`).classList.add('active');
+      updateDisplay();
+    }
+
+    function addCount() {
+      const count = parseInt(document.getElementById("count").value);
+      if (isNaN(count) || count <= 0) {
+        alert("Lütfen geçerli bir sayı girin.");
+        return;
+      }
+      counts[currentUser] += count;
+      localStorage.setItem('counts', JSON.stringify(counts));
+      updateDisplay();
+      document.getElementById("count").value = "";
+    }
+
+    function updateDisplay() {
+      document.getElementById("userCount").innerText = counts[currentUser];
+      const message = document.getElementById("limitMessage");
+      const alarmSound = document.getElementById("alarmSound");
+      if (counts[currentUser] > 10) {
+        message.innerText = "⚠️ 10 taneyi geçtin, cezalısın!";
+        message.style.animation = "flash 1s infinite";
+        alarmSound.play();
+        setTimeout(() => {
+          alarmSound.pause();
+          alarmSound.currentTime = 0;
+        }, 2000);
+      } else {
+        message.innerText = "Devam ediyorsun.";
+        message.style.color = "#a9d6b9";
+        message.style.animation = "none";
+      }
+    }
+
+    function resetCounts() {
+      if (confirm("Günü sıfırlamak istediğinize emin misiniz?")) {
+        counts = { ogulcan: 0, sude: 0 };
+        localStorage.setItem('counts', JSON.stringify(counts));
+        updateDisplay();
+      }
+    }
+
+    updateDate();
+    updateDisplay();
+  </script>
+</body>
+</html>
